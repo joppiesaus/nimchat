@@ -10,6 +10,11 @@ let port = parseInt(pargs[0])
 
 var clients {.threadvar.}: DoublyLinkedList[AsyncSocket]
 
+proc broadcast(message: string) {.async.} =
+    echo message
+    for c in clients:
+        await c.send(message & "\n")
+
 proc processClient(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
     var client = node.value
     while true:
@@ -17,12 +22,10 @@ proc processClient(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
         if line == "":  
             clients.remove(node)
             client.close()
-            echo "Client disconnected!"
+            asyncCheck broadcast("Client disconnected!")
             break
 
-        echo line
-        for c in clients:
-            await c.send(line & "\n")
+        asyncCheck broadcast(line)
 
 proc serve() {.async.} =
     clients = initDoublyLinkedList[AsyncSocket]()
@@ -34,8 +37,8 @@ proc serve() {.async.} =
         let client = await server.accept()
         let node = newDoublyLinkedNode(client)
         clients.append(node)
-        echo "New client connected!"
         asyncCheck processClient(node)
+        asyncCheck broadcast("New client connected!")
 
 asyncCheck serve()
 runForever()
