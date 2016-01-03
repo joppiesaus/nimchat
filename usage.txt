@@ -1,0 +1,20 @@
+These are a set of programs which goal is to provide chat functions.
+
+# SERVER - server <port>
+	The server will run a chat server at destinated port.
+	When a client connects to the server, it will be added to a list of
+	clients. When a client pushses a line of text to the server, it will be
+	broadcasted to all clients.
+
+# SENDER - sender <host> <port> [prefix]
+	This program will open a socket to host:port. Then it will allow you to
+	enter data via stdin, which will be pushed trough the socket.
+	If prefix is specified, it'll send the data with prefix in front of it.
+
+# RECEIVER - receiver <host> <port>
+	This program will open a socket to host:port, then it will echo all data
+	that is being received by the socket.
+
+Have fun with it!
+2015-12-26
+
