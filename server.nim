@@ -9,6 +9,7 @@ if paramCount() < 1:
 let port = parseInt(pargs[0])
 
 var clients {.threadvar.}: DoublyLinkedList[AsyncSocket]
+var clientCount = 0
 
 proc broadcast(message: string) {.async.} =
     echo message
@@ -21,8 +22,9 @@ proc processClient(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
         let line = await client.recvLine()
         if line == "":  
             clients.remove(node)
+            clientCount -= 1
             client.close()
-            asyncCheck broadcast("Client disconnected!")
+            asyncCheck broadcast("Client disconnected! " & $clientCount & " online now!")
             break
 
         asyncCheck broadcast(line)
@@ -37,8 +39,9 @@ proc serve() {.async.} =
         let client = await server.accept()
         let node = newDoublyLinkedNode(client)
         clients.append(node)
+        clientCount += 1
         asyncCheck processClient(node)
-        asyncCheck broadcast("New client connected!")
+        asyncCheck broadcast("New client connected! " & $clientCount & " online now!")
 
 asyncCheck serve()
 runForever()
