@@ -90,18 +90,22 @@ proc generatePrime(max: int): int =
         if isPrime(prime):
             return prime
 
-# returns lowest n >= 3 that shares no common factors with n
-proc generateE(n: int): int =
-    # TODO: Implement
-    return 3 #huehuehuehue
+# returns a random exponent between n -1 and >= 3, sharing no factors with phi
+proc generateE(phi, n: int): int =
+    # inneficient?
+    while true:
+        var e = random(n - 3) + 3
+        if gcd(e, phi) == 1: return e
+    return 3 #huehuehuehue 65537
 
 
 proc generateKeyPair*(): KeyPair =
     var
-        e = 65537
-        q, p, phi, n, d: int
+        e, q, p, phi, n, d: int
 
-    const maxPrime = 1000#1073741823 # (2^31(int max val) - 2) / 2
+    const
+        maxPrime = 10001
+        maxExponent = 1000
 
     while true:
         q = generatePrime(maxPrime)
@@ -111,6 +115,7 @@ proc generateKeyPair*(): KeyPair =
             break
 
     phi = (q - 1) * (p - 1)
+    e = generateE(phi, maxExponent)
     d = invmod(e, phi)
 
     echo "p: ", p, ", q: ", q
