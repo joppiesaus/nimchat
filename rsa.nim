@@ -33,9 +33,7 @@ proc invmod(n, modulus: int): int =
         a = n
         b = modulus
         x = 0
-        y = 1
         x0 = 1
-        y0 = 0
         q, temp: int
     while b != 0:
         q = int(a / b)
@@ -45,9 +43,6 @@ proc invmod(n, modulus: int): int =
         temp = x
         x = x0 - q * x
         x0 = temp
-        temp = y
-        y = y0 - q * y
-        y0 = temp
     if x0 < 0:
         x0 += modulus
     return x0
@@ -101,7 +96,7 @@ proc generateKeyPair*(): KeyPair =
         e = 65537
         q, p, phi, n, d: int
 
-    const maxPrime = 1000#1073741823 # (2^31(int max val) - 2) / 2
+    const maxPrime = 10000
 
     while true:
         q = generatePrime(maxPrime)
