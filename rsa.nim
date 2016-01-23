@@ -27,25 +27,28 @@ proc modexp(factor, power, modulus: int): int =
         fac = (fac * fac) mod modulus
 
 # Returns n^-1 % modulus
-# Uses the extended euclidian algorithm
+# Uses a modified version of the extended euclidian algorithm
 proc invmod(n, modulus: int): int =
     var
-        a = n
-        b = modulus
-        x = 0
-        x0 = 1
-        q, temp: int
-    while b != 0:
-        q = int(a / b)
-        temp = a mod b
-        a = b
-        b = temp
-        temp = x
-        x = x0 - q * x
-        x0 = temp
-    if x0 < 0:
-        x0 += modulus
-    return x0
+        rem = n
+        remprev = modulus
+        aux = 1
+        auxprev = 0
+        rcur = 0
+        qcur = 0
+        acur = 0
+    while rem > 1:
+        qcur = int(remprev / rem)
+        rcur = remprev mod rem
+        acur = modulus - qcur
+        acur *= aux
+        acur += auxprev
+        acur = acur mod modulus
+        remprev = rem
+        auxprev = aux
+        rem = rcur
+        aux = acur
+    return acur
 
 # Returns gcd(a, b)
 proc gcd(a, b: int): int =
