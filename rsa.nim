@@ -1,16 +1,16 @@
-import math
+import math, strutils
 
 type PublicKey* = object
-    n: int # public key
-    e: int  # exponent
+    n*: int # public key
+    e*: int  # exponent
 
 type PrivateKey* = object
-    n: int # public key
-    d: int # private key
+    n*: int # public key
+    d*: int # private key
 
 type KeyPair* = object
-    public: PublicKey
-    private: PrivateKey
+    public*: PublicKey
+    private*: PrivateKey
 
 
 # Returns factor^power % modulus
@@ -101,6 +101,8 @@ proc generateKeyPair*(): KeyPair =
     var
         e, q, p, phi, n, d: int
 
+    randomize()
+
     const
         maxPrime = 10001
         maxExponent = 1000
@@ -129,12 +131,28 @@ proc encrypt*(k: PublicKey, data: int): int =
 proc decrypt*(k: PrivateKey, data: int): int =
     return modexp(data, k.d, k.n)
 
+proc encrypt*(k: PublicKey, data: char): string =
+    return $encrypt(k, ord(data))
+
+proc decrypt*(k: PrivateKey, data: string): char =
+    return char decrypt(k, parseInt(data))
+
+
 proc doTest(keys: KeyPair, test: int) =
     var encryptedTest = encrypt(keys.public, test)
     echo test, " => ", encryptedTest
 
     var decryptedTest = decrypt(keys.private, encryptedTest)
     echo encryptedTest, " => ", decryptedTest
+
+# TODO: HOW DO I FIX THIS???? THIS IS THE EXACT SAME FUNCTION BUT WITH CHAR INSTEAD OF INT HELP
+proc doTest(keys: KeyPair, test: char) =
+    var encryptedTest = encrypt(keys.public, test)
+    echo test, " => ", encryptedTest
+
+    var decryptedTest = decrypt(keys.private, encryptedTest)
+    echo encryptedTest, " => ", decryptedTest
+
 
 when isMainModule:
     echo "sheep"
@@ -147,3 +165,7 @@ when isMainModule:
     for i in 1..3:
         echo "# Test ", i, ":"
         doTest(keys, random(256))
+
+    for i in 1..3:
+        echo "# Test ", i, ":"
+        doTest(keys, char random(256))
