@@ -33,4 +33,4 @@ while true:
         s.send(encrypt(publicKey, c) & "\n")
 
     s.send(MessageEnd & "\n")
-    #s.send(prefix & readLine(stdin) & "\n")
+    

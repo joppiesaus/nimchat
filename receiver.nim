@@ -23,7 +23,10 @@ while true:
         s.readLine(response)
         if response == MessageEnd:
             break
+        elif response == "":
+            echo "Got empty data, aborting..."
+            s.close()
+            quit(QuitFailure)
         var c = decrypt(keypair.private, string(response))
         stdout.write c
-        #echo response
     stdout.write("\n")

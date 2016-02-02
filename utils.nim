@@ -1,9 +1,9 @@
 import rsa, strutils
 
 const
-    MessageEnd* = "JAN"
-    SockSender* = "TEA"
-    SockReceiver* = "CUP"
+    MessageEnd* = ";;"
+    SockSender* = ">>"
+    SockReceiver* = "<<"
 
 
 proc toBroadcastString*(k: PublicKey): string =

@@ -69,9 +69,9 @@ proc serve() {.async.} =
             asyncCheck broadcast("Sender connected!")
         of SockReceiver:
             var receiver: Receiver
-            #var n = await client.recvLine()
-            #var e = await client.recvLine()
-            receiver.k = initPublicKey(await client.recvLine(), await client.recvLine())
+            var n = await client.recvLine()
+            var e = await client.recvLine()
+            receiver.k = initPublicKey(n, e)
             receiver.s = client
             # TODO: what if connection is closed?
             receivers.append(newDoublyLinkedNode(receiver))
