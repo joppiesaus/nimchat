@@ -1,48 +1,34 @@
-import math, strutils
+import math, strutils, gmp
 
 type PublicKey* = object
-    n*: int # public key
-    e*: int  # exponent
+    n*: GmpInt # public key
+    e*: GmpInt  # exponent
 
 type PrivateKey* = object
-    n*: int # public key
-    d*: int # private key
+    n*: GmpInt # public key
+    d*: GmpInt # private key
 
 type KeyPair* = object
     public*: PublicKey
     private*: PrivateKey
 
 
-# Returns factor^power % modulus
-proc modexp(factor, power, modulus: int): int =
-    result = 1
-    var
-        fac = factor
-        pow = power
-    while pow > 0:
-        if pow mod 2 == 1:
-            result = (result * fac) mod modulus
-            pow -= 1
-        pow = pow shr 1 # divide by 2. (pow = int(pow / 2))
-        fac = (fac * fac) mod modulus
-
 # Returns n^-1 % modulus
 # Uses a modified version of the extended euclidian algorithm
-proc invmod(n, modulus: int): int =
+proc invmod(n, modulus: GmpInt): GmpInt =
     var
         rem = n
         remprev = modulus
-        aux = 1
-        auxprev = 0
-        rcur = 0
-        qcur = 0
-        acur = 0
+        aux = 1.Z
+        auxprev = newGmpInt()
+        rcur = newGmpInt()
+        qcur = newGmpInt()
+        acur = newGmpInt()
     while rem > 1:
-        qcur = int(remprev / rem)
-        rcur = remprev mod rem
+        divMod(qcur, rcur, remprev, rem)
         acur = modulus - qcur
-        acur *= aux
-        acur += auxprev
+        acur = acur * aux
+        acur = acur + auxprev
         acur = acur mod modulus
         remprev = rem
         auxprev = aux
@@ -50,72 +36,60 @@ proc invmod(n, modulus: int): int =
         aux = acur
     return acur
 
-# Returns gcd(a, b)
-proc gcd(a, b: int): int =
-    var
-        x = a
-        y = b
-        z: int
-    while y != 0:
-        z = x mod y
-        x = y
-        y = z
-    return x
+
+# Generates a random number of max n bits length
+proc randomNumber(max: int): GmpInt =
+    var s = ""
+    let length = random(max) + 1
+    for i in 1..length:
+        s.add(char(random(2) + ord('0')))
+    result = parseGmpInt(s, 2)
 
 # returns false if n is composite, and true if n is probably prime
-proc isPrime(n: int): bool =
-    const Trails = 20
-    for i in 1..Trails:
-        # random number between 1 and n - 1
-        var test = random(n - 2) + 2
+proc isPrime(n: GmpInt, trailBytes: int, trails: int = 20): bool =
+    for i in 1..trails:
+        var test = randomNumber(trailBytes) - 1
 
         if gcd(test, n) != 1:
             return false
 
-        if modexp(test, n - 1, n) != 1:
+        if powmod(test, n - 1, n) != 1:
             return false
     return true
 
-# returns a random prime, between 3 and max - 1
-# not uniform
-# ...hopefully(there's a chance it will return a composite)
-proc generatePrime(max: int): int =
-    let m = max + (max mod 2) - 4
+# Returns (hopefully) a random prime of n bits
+proc generatePrime(n: int): GmpInt =
     while true:
-        let prime = random(m) + 4
-        if prime mod 2 == 0:
-            continue
-        if isPrime(prime):
-            return prime
+        var s = ""
+        s[0] = '1' # Ensure the number is big
+        for i in 1..n - 1:
+            s.add(char(random(2) + ord('0')))
+        s.add('1')
+        var x = parseGmpInt(s, 2)
+        # uncomment if you are working with a different base
+        #if x.isEven():
+        #    x = x + 1
+        if isPrime(x, n):
+            return x
 
-# returns a random exponent between n -1 and >= 3, sharing no factors with phi
-proc generateE(phi, n: int): int =
-    # inneficient?
+proc generateE(phi: GmpInt): GmpInt =
     while true:
-        var e = random(n - 3) + 3
-        if gcd(e, phi) == 1: return e
-    return 3 #huehuehuehue 65537
+        let e = random((int high int) - 3) + 3
+        if gcd(e.Z, phi) == 1: return e.Z # ez pz lemon sqeez
+    return 65537.Z # kappa
 
-
-proc generateKeyPair*(): KeyPair =
+proc generateKeyPair*(bits: int): KeyPair =
     var
-        e, q, p, phi, n, d: int
+        e, q, p, phi, n, d: GmpInt
 
     randomize()
 
-    const
-        maxPrime = 10001
-        maxExponent = 1000
-
-    while true:
-        q = generatePrime(maxPrime)
-        p = generatePrime(maxPrime)
-        n = q * p
-        if n > 127:
-            break
+    q = generatePrime(bits)
+    p = generatePrime(bits)
+    n = q * p
 
     phi = (q - 1) * (p - 1)
-    e = generateE(phi, maxExponent)
+    e = generateE(phi) #65537.Z
     d = invmod(e, phi)
 
     echo "p: ", p, ", q: ", q
@@ -125,47 +99,29 @@ proc generateKeyPair*(): KeyPair =
 
     return KeyPair(public: PublicKey(n: n, e: e), private: PrivateKey(n: n, d: d))
 
-proc encrypt*(k: PublicKey, data: int): int =
-    return modexp(data, k.e, k.n)
+proc encrypt*(k: PublicKey, data: GmpInt): GmpInt =
+    return powmod(data, k.e, k.n)
 
-proc decrypt*(k: PrivateKey, data: int): int =
-    return modexp(data, k.d, k.n)
-
-proc encrypt*(k: PublicKey, data: char): string =
-    return $encrypt(k, ord(data))
-
-proc decrypt*(k: PrivateKey, data: string): char =
-    return char decrypt(k, parseInt(data))
+proc decrypt*(k: PrivateKey, data: GmpInt): GmpInt =
+    return powmod(data, k.d, k.n)
 
 
-proc doTest(keys: KeyPair, test: int) =
+proc doTest(keys: KeyPair, test: GmpInt) =
     var encryptedTest = encrypt(keys.public, test)
     echo test, " => ", encryptedTest
 
     var decryptedTest = decrypt(keys.private, encryptedTest)
     echo encryptedTest, " => ", decryptedTest
 
-# TODO: HOW DO I FIX THIS???? THIS IS THE EXACT SAME FUNCTION BUT WITH CHAR INSTEAD OF INT HELP
-proc doTest(keys: KeyPair, test: char) =
-    var encryptedTest = encrypt(keys.public, test)
-    echo test, " => ", encryptedTest
-
-    var decryptedTest = decrypt(keys.private, encryptedTest)
-    echo encryptedTest, " => ", decryptedTest
-
+    assert $test == $decryptedTest
 
 when isMainModule:
-    echo "sheep"
-    randomize()
-    echo "Random prime: ", generatePrime(20000000)
+    #echo "Random prime: ", generatePrime(512)
 
-    let keys = generateKeyPair()
+    const bits = 77 # Calm down it's just a test okay!
+    let keys = generateKeyPair(bits)
 
     echo ""
     for i in 1..3:
         echo "# Test ", i, ":"
-        doTest(keys, random(256))
-
-    for i in 1..3:
-        echo "# Test ", i, ":"
-        doTest(keys, char random(256))
+        doTest(keys, randomNumber(bits))
