@@ -32,7 +32,7 @@ publicKey.bits = parseInt(string tmpLine)
 var blockSize = publicKey.getBlockSize(EncryptionBase)
 
 while true:
-    var message = prefix & readLine(stdin)
+    var message = encodeToEncryptionBase(prefix & readLine(stdin))
     var m = ""
     var i = 0
     for c in message:

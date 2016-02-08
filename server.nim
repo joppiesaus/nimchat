@@ -20,11 +20,12 @@ var
 
 proc broadcast(message: string) {.async.} =
     echo message
+    var msg = message.encodeToEncryptionBase()
     for c in receivers:
         var i = 0
         var s = ""
         var blockSize = c.k.getBlockSize(EncryptionBase)
-        for a in message:
+        for a in msg:
             i += 1
             s.add(a)
             if i == blockSize:
@@ -52,6 +53,7 @@ proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
             var c = decrypt(keypair.private, line)
             msg.add(c)
             #stdout.write(c)
+        msg = msg.decodeFromEncryptionBase()
         #stdout.write("\n") # TODO: What if two at the same time? Maybe just ouput message,
         # and not the rest. but this is real-time so it is cool!!!
         asyncCheck broadcast(msg)

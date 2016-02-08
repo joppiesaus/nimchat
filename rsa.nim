@@ -1,6 +1,6 @@
 import math, strutils, gmp
-type PublicKey* = object
 
+type PublicKey* = object
     n*: GmpInt # public key
     e*: GmpInt  # exponent
     bits*: int
@@ -50,11 +50,14 @@ proc randomNumber(max: int): GmpInt =
 # returns false if n is composite, and true if n is probably prime
 proc isPrime(n: GmpInt, trailBytes: int, trails: int = 20): bool =
     for i in 1..trails:
+        # Take a random number < n
         var test = randomNumber(trailBytes) - 1
 
+        # if it divises n, n is not a prime
         if gcd(test, n) != 1:
             return false
 
+        # fermat test: n^p-1 mod p always equals 1 where n is any integer and p a prime
         if powmod(test, n - 1, n) != 1:
             return false
     return true

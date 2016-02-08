@@ -28,6 +28,6 @@ while true:
             echo "Got empty data, aborting..."
             s.close()
             quit(QuitFailure)
-        var c = decrypt(keypair.private, string(response))
+        var c = decrypt(keypair.private, string(response)).decodeFromEncryptionBase()
         stdout.write c
     stdout.write("\n")
