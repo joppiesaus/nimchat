@@ -16,13 +16,23 @@ var
     keypair: KeyPair
     receivers {.threadvar.}: DoublyLinkedList[Receiver]
     senders {.threadvar.}: DoublyLinkedList[AsyncSocket]
-
+    bits = DefaultBitsEncryption
 
 proc broadcast(message: string) {.async.} =
     echo message
     for c in receivers:
+        var i = 0
+        var s = ""
+        var blockSize = c.k.getBlockSize(EncryptionBase)
         for a in message:
-            await c.s.send(encrypt(c.k, a) & "\n")
+            i += 1
+            s.add(a)
+            if i == blockSize:
+                await c.s.send(encrypt(c.k, s) & "\n")
+                i = 0
+                s = ""
+        if i != 0:
+            await c.s.send(encrypt(c.k, s) & "\n")
         await c.s.send(MessageEnd & "\n")
 
 proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
@@ -49,7 +59,7 @@ proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
 proc serve() {.async.} =
     receivers = initDoublyLinkedList[Receiver]()
     senders = initDoublyLinkedList[AsyncSocket]()
-    keypair = generateKeyPair()
+    keypair = generateKeyPair(bits)
 
     var server = newAsyncSocket()
     server.bindAddr(Port(port))
@@ -71,7 +81,8 @@ proc serve() {.async.} =
             var receiver: Receiver
             var n = await client.recvLine()
             var e = await client.recvLine()
-            receiver.k = initPublicKey(n, e)
+            var c = await client.recvLine()
+            receiver.k = initPublicKey(n, e, c)
             receiver.s = client
             # TODO: what if connection is closed?
             receivers.append(newDoublyLinkedNode(receiver))

@@ -21,16 +21,27 @@ s.send(SockSender & "\n")
 # What a mess
 var tmpLine = TaintedString""
 s.readLine(tmpLine)
-publicKey.n = parseInt(string tmpLine)
+publicKey.n = fromBroadcastString(string tmpLine)
 tmpLine = TaintedString""
 s.readLine(tmpLine)
-publicKey.e = parseInt(string tmpLine)
+publicKey.e = fromBroadcastString(string tmpLine)
+tmpLine = TaintedString""
+s.readLine(tmpLine)
+publicKey.bits = parseInt(string tmpLine)
+
+var blockSize = publicKey.getBlockSize(EncryptionBase)
 
 while true:
     var message = prefix & readLine(stdin)
-
+    var m = ""
+    var i = 0
     for c in message:
-        s.send(encrypt(publicKey, c) & "\n")
-
+        i += 1
+        m.add(c)
+        if i == blockSize:
+            s.send(encrypt(publicKey, m) & "\n")
+            m = ""
+            i = 0
+    if i != 0:
+        s.send(encrypt(publicKey, m) & "\n")
     s.send(MessageEnd & "\n")
-    

@@ -1,12 +1,14 @@
 import math, strutils, gmp
-
 type PublicKey* = object
+
     n*: GmpInt # public key
     e*: GmpInt  # exponent
+    bits*: int
 
 type PrivateKey* = object
     n*: GmpInt # public key
     d*: GmpInt # private key
+    bits*: int
 
 type KeyPair* = object
     public*: PublicKey
@@ -81,29 +83,39 @@ proc generateE(phi: GmpInt): GmpInt =
 proc generateKeyPair*(bits: int): KeyPair =
     var
         e, q, p, phi, n, d: GmpInt
-
+    let hbits = bits div 2
     randomize()
 
-    q = generatePrime(bits)
-    p = generatePrime(bits)
+    q = generatePrime(hbits)
+    p = generatePrime(hbits)
     n = q * p
 
     phi = (q - 1) * (p - 1)
     e = generateE(phi) #65537.Z
     d = invmod(e, phi)
 
-    echo "p: ", p, ", q: ", q
-    echo "phi: ", phi, "(p - 1) * (q - 1), where p and q prime"
-    echo "public key: ", n, ", ", e
-    echo "private key: ", d
+    when isMainModule:
+        echo "p: ", p, ", q: ", q
+        echo "phi: ", phi, "(p - 1) * (q - 1), where p and q prime"
+        echo "public key: ", n, ", ", e
+        echo "private key: ", d
 
-    return KeyPair(public: PublicKey(n: n, e: e), private: PrivateKey(n: n, d: d))
+    return KeyPair(
+        public: PublicKey(n: n, e: e, bits: bits),
+        private: PrivateKey(n: n, d: d, bits: bits)
+    )
 
 proc encrypt*(k: PublicKey, data: GmpInt): GmpInt =
     return powmod(data, k.e, k.n)
 
 proc decrypt*(k: PrivateKey, data: GmpInt): GmpInt =
     return powmod(data, k.d, k.n)
+
+proc getBlockSize*(k: PublicKey, base: int): int =
+    return int(float(k.bits) / sqrt(float base))
+
+proc getBlockSize*(k: PrivateKey, base: int): int =
+    return int(float(k.bits) / sqrt(float base))
 
 
 proc doTest(keys: KeyPair, test: GmpInt) =
@@ -118,8 +130,11 @@ proc doTest(keys: KeyPair, test: GmpInt) =
 when isMainModule:
     #echo "Random prime: ", generatePrime(512)
 
-    const bits = 77 # Calm down it's just a test okay!
+    const bits = 130 # Calm down it's just a test okay!
     let keys = generateKeyPair(bits)
+
+    echo "bits: ", keys.public.bits
+    echo "blocksize: ", keys.public.getBlockSize(62)
 
     echo ""
     for i in 1..3:

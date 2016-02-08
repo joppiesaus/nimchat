@@ -9,7 +9,8 @@ if paramCount() < 2:
 let
     host = pargs[0]
     port = parseInt(pargs[1])
-    keypair = generateKeyPair()
+    bits = DefaultBitsEncryption
+    keypair = generateKeyPair(bits)
 
 var s = newSocket()
 
