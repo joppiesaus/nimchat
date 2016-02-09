@@ -16,13 +16,29 @@ var
     keypair: KeyPair
     receivers {.threadvar.}: DoublyLinkedList[Receiver]
     senders {.threadvar.}: DoublyLinkedList[AsyncSocket]
-
+    bits = DefaultBitsEncryption
 
 proc broadcast(message: string) {.async.} =
     echo message
+    var msg = (message & "\n").encodeToEncryptionBase()
     for c in receivers:
-        for a in message:
-            await c.s.send(encrypt(c.k, a) & "\n")
+        var
+            i = 0
+            prevI = 0
+            blockSize = c.k.getBlockSize(EncryptionBase)
+        while true:
+            i += blockSize
+            if i >= msg.len:
+                break
+            if i != msg.high and
+                msg[i - 1] != EncodeEncryptionBaseThingSplitChar and
+                msg[i] != EncodeEncryptionBaseThingSplitChar:
+                while msg[i] != EncodeEncryptionBaseThingSplitChar:
+                    i -= 1
+            await c.s.send(encrypt(c.k, msg[prevI..i]) & "\n")
+            prevI = i
+        if prevI < msg.high:
+            await c.s.send(encrypt(c.k, msg[prevI..msg.high]) & "\n")
         await c.s.send(MessageEnd & "\n")
 
 proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
@@ -42,6 +58,7 @@ proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
             var c = decrypt(keypair.private, line)
             msg.add(c)
             #stdout.write(c)
+        msg = msg.decodeFromEncryptionBase()
         #stdout.write("\n") # TODO: What if two at the same time? Maybe just ouput message,
         # and not the rest. but this is real-time so it is cool!!!
         asyncCheck broadcast(msg)
@@ -49,7 +66,7 @@ proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =
 proc serve() {.async.} =
     receivers = initDoublyLinkedList[Receiver]()
     senders = initDoublyLinkedList[AsyncSocket]()
-    keypair = generateKeyPair()
+    keypair = generateKeyPair(bits)
 
     var server = newAsyncSocket()
     server.bindAddr(Port(port))
@@ -71,7 +88,8 @@ proc serve() {.async.} =
             var receiver: Receiver
             var n = await client.recvLine()
             var e = await client.recvLine()
-            receiver.k = initPublicKey(n, e)
+            var c = await client.recvLine()
+            receiver.k = initPublicKey(n, e, c)
             receiver.s = client
             # TODO: what if connection is closed?
             receivers.append(newDoublyLinkedNode(receiver))

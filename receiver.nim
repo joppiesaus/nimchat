@@ -9,7 +9,8 @@ if paramCount() < 2:
 let
     host = pargs[0]
     port = parseInt(pargs[1])
-    keypair = generateKeyPair()
+    bits = DefaultBitsEncryption
+    keypair = generateKeyPair(bits)
 
 var s = newSocket()
 
@@ -22,11 +23,11 @@ while true:
         var response = TaintedString""
         s.readLine(response)
         if response == MessageEnd:
+            #stdout.write("\n")
             break
         elif response == "":
             echo "Got empty data, aborting..."
             s.close()
             quit(QuitFailure)
-        var c = decrypt(keypair.private, string(response))
+        var c = decrypt(keypair.private, string(response)).decodeFromEncryptionBase()
         stdout.write c
-    stdout.write("\n")

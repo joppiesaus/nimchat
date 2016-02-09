@@ -21,16 +21,35 @@ s.send(SockSender & "\n")
 # What a mess
 var tmpLine = TaintedString""
 s.readLine(tmpLine)
-publicKey.n = parseInt(string tmpLine)
+publicKey.n = fromBroadcastString(string tmpLine)
 tmpLine = TaintedString""
 s.readLine(tmpLine)
-publicKey.e = parseInt(string tmpLine)
+publicKey.e = fromBroadcastString(string tmpLine)
+tmpLine = TaintedString""
+s.readLine(tmpLine)
+publicKey.bits = parseInt(string tmpLine)
+
+var blockSize = publicKey.getBlockSize(EncryptionBase)
 
 while true:
-    var message = prefix & readLine(stdin)
-
-    for c in message:
-        s.send(encrypt(publicKey, c) & "\n")
-
-    s.send(MessageEnd & "\n")
-    
+    var
+        # Encode to encryption base
+        message = encodeToEncryptionBase(prefix & readLine(stdin))
+        i = 0
+        prevI = 0
+    while true:
+        i += blockSize
+        if i >= message.len:
+            break
+        # Make sure the characters are broadcast correctly(not split halfway)
+        if i != message.high and
+            message[i - 1] != EncodeEncryptionBaseThingSplitChar and
+            message[i] != EncodeEncryptionBaseThingSplitChar:
+            while message[i] != EncodeEncryptionBaseThingSplitChar:
+                i -= 1
+        # Encrypt and send it
+        s.send(encrypt(publicKey, message[prevI..i]) & "\n")
+        prevI = i
+    if prevI < message.high:
+        s.send(encrypt(publicKey, message[prevI..message.high]) & "\n")
+    s.send(MessageEnd & "\n") # Declare end-of-message
