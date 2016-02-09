@@ -20,20 +20,25 @@ var
 
 proc broadcast(message: string) {.async.} =
     echo message
-    var msg = message.encodeToEncryptionBase()
+    var msg = (message & "\n").encodeToEncryptionBase()
     for c in receivers:
-        var i = 0
-        var s = ""
-        var blockSize = c.k.getBlockSize(EncryptionBase)
-        for a in msg:
-            i += 1
-            s.add(a)
-            if i == blockSize:
-                await c.s.send(encrypt(c.k, s) & "\n")
-                i = 0
-                s = ""
-        if i != 0:
-            await c.s.send(encrypt(c.k, s) & "\n")
+        var
+            i = 0
+            prevI = 0
+            blockSize = c.k.getBlockSize(EncryptionBase)
+        while true:
+            i += blockSize
+            if i >= msg.len:
+                break
+            if i != msg.high and
+                msg[i - 1] != EncodeEncryptionBaseThingSplitChar and
+                msg[i] != EncodeEncryptionBaseThingSplitChar:
+                while msg[i] != EncodeEncryptionBaseThingSplitChar:
+                    i -= 1
+            await c.s.send(encrypt(c.k, msg[prevI..i]) & "\n")
+            prevI = i
+        if prevI < msg.high:
+            await c.s.send(encrypt(c.k, msg[prevI..msg.high]) & "\n")
         await c.s.send(MessageEnd & "\n")
 
 proc processSender(node: DoublyLinkedNode[AsyncSocket]) {.async.} =

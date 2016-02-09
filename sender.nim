@@ -32,16 +32,24 @@ publicKey.bits = parseInt(string tmpLine)
 var blockSize = publicKey.getBlockSize(EncryptionBase)
 
 while true:
-    var message = encodeToEncryptionBase(prefix & readLine(stdin))
-    var m = ""
-    var i = 0
-    for c in message:
-        i += 1
-        m.add(c)
-        if i == blockSize:
-            s.send(encrypt(publicKey, m) & "\n")
-            m = ""
-            i = 0
-    if i != 0:
-        s.send(encrypt(publicKey, m) & "\n")
-    s.send(MessageEnd & "\n")
+    var
+        # Encode to encryption base
+        message = encodeToEncryptionBase(prefix & readLine(stdin))
+        i = 0
+        prevI = 0
+    while true:
+        i += blockSize
+        if i >= message.len:
+            break
+        # Make sure the characters are broadcast correctly(not split halfway)
+        if i != message.high and
+            message[i - 1] != EncodeEncryptionBaseThingSplitChar and
+            message[i] != EncodeEncryptionBaseThingSplitChar:
+            while message[i] != EncodeEncryptionBaseThingSplitChar:
+                i -= 1
+        # Encrypt and send it
+        s.send(encrypt(publicKey, message[prevI..i]) & "\n")
+        prevI = i
+    if prevI < message.high:
+        s.send(encrypt(publicKey, message[prevI..message.high]) & "\n")
+    s.send(MessageEnd & "\n") # Declare end-of-message

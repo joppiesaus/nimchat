@@ -52,7 +52,7 @@ proc toHex(n: int): string =
 # BUT UNICODE CHARACTERS ACT VERY WEIRD
 # ASDLKFJASKLDFJLASKDFJLKASDJFLKASJKLASDFJLKASDJFLKJASFLJKASDF
 # HELP
-const EncodeEncryptionBaseThingSplitChar = 'a'
+const EncodeEncryptionBaseThingSplitChar* = 'a'
 
 proc encodeToEncryptionBase*(s: string): string =
     result = ""
@@ -62,7 +62,7 @@ proc encodeToEncryptionBase*(s: string): string =
 
 proc decodeFromEncryptionBase*(s: string): string =
     result = ""
-    var chars = s.split(EncodeEncryptionBaseThingSplitChar)
+    var chars = s.split( {EncodeEncryptionBaseThingSplitChar} )
     for c in chars:
         result.add(char(parseHexInt(c)))
 

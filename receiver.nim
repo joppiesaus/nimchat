@@ -23,6 +23,7 @@ while true:
         var response = TaintedString""
         s.readLine(response)
         if response == MessageEnd:
+            #stdout.write("\n")
             break
         elif response == "":
             echo "Got empty data, aborting..."
@@ -30,4 +31,3 @@ while true:
             quit(QuitFailure)
         var c = decrypt(keypair.private, string(response)).decodeFromEncryptionBase()
         stdout.write c
-    stdout.write("\n")
