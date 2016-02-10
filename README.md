@@ -10,5 +10,7 @@ Now featuring encryption!
 
 If you don't have Nim yet, [get it](http://nim-lang.org/download.html)!
 
+This program uses GMP, so you need to have that installed. If you have GCC you usually have GMP, but on Windows you usually don't. You need to get it from http://win-builds.org/ and install it in your compiler. 
+
 # Using
 View `usage.txt`
