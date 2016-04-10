@@ -6,7 +6,11 @@ Now featuring encryption!
 
 
 # Building
-`nim c -d:release input.nim`
+`./build.sh` for debug or `/build.sh release` for release mode
+
+On Windows: `build`/`build release`
+
+Or one at the time(I usually do this while developing): `nim c input.nim`
 
 If you don't have Nim yet, [get it](http://nim-lang.org/download.html)!
 
