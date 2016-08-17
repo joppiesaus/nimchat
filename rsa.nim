@@ -1,4 +1,4 @@
-import math, strutils, gmp
+import math, strutils, gmp, random
 
 type PublicKey* = object
     n*: GmpInt # public key
